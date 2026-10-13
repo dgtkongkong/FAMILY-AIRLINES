@@ -25,7 +25,7 @@ async function api(path,body){
  if(path==='state'){
   if(!previewUser){demo=false;renderLogin();throw Error('请选择预览身份')}
   const response=await fetch('./sample-'+(previewUser==='child'?'child':'parent')+'.json');
-  if(!response.ok)throw Error('预览载入失败');return response.json();
+  if(!response.ok)throw Error('预览载入失败');const data=await response.json();if(previewUser==='mom'){data.user.id='mom';data.user.name='妈妈'}return data;
  }
  throw Error('只读预览不保存操作。正式打卡与审批请连接云端家庭塔台。');
 }
@@ -38,7 +38,7 @@ const realRenderLogin=renderLogin;
 renderLogin=function(){realRenderLogin();
  document.querySelector('.login-form h2').textContent='浏览应用预览';
  document.querySelector('.login-form .muted').textContent='选择身份查看界面，无需输入真实密码。正式服务尚待部署。';
- const password=document.querySelector('input[name="password"]');password.value='previewonly';password.closest('label').hidden=true;
+ const password=document.querySelector('input[name="password"]');password.value='previewonly';password.closest('label').remove();
  document.querySelector('#login button').textContent='进入只读预览 →';
 };
 const realBind=bind;
