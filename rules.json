@@ -1,0 +1,323 @@
+{
+  "version": "2026-10-13.3-fleet",
+  "child": "胡庭溢",
+  "default_goal": 130,
+  "minimum_goal": 120,
+  "tasks": [
+    {
+      "id": "habit",
+      "module": "地面保障（生活）",
+      "name": "生活习惯",
+      "miles": 1,
+      "frequency": "day",
+      "options": [
+        "21:30 关灯熄火",
+        "早晚认真刷牙",
+        "睡前准备次日衣物",
+        "保持床铺整洁"
+      ]
+    },
+    {
+      "id": "clean",
+      "module": "地面保障（生活）",
+      "name": "餐后地面保洁",
+      "miles": 2,
+      "frequency": "day",
+      "options": [
+        "主动收全家碗筷至水槽，并擦净餐桌及周边地面"
+      ]
+    },
+    {
+      "id": "help",
+      "module": "地面保障（生活）",
+      "name": "后勤支援",
+      "miles": 2,
+      "frequency": "day",
+      "options": [
+        "协助晾收衣物",
+        "倒垃圾",
+        "物归原位",
+        "教导辅助弟弟归纳玩具"
+      ]
+    },
+    {
+      "id": "pack",
+      "module": "地面保障（生活）",
+      "name": "独立收纳",
+      "miles": 1,
+      "frequency": "day",
+      "options": [
+        "自主整理次日书包、校服与文具，不依赖父母检查"
+      ]
+    },
+    {
+      "id": "chinese",
+      "module": "核心巡航（学习）",
+      "name": "语文 · 文言与语感",
+      "miles": 3,
+      "frequency": "day",
+      "options": [
+        "小古文或范文朗读 15 分钟并圈实词",
+        "阅读理解 1 篇并写思路",
+        "睡前文字阅读 30 分钟",
+        "19:00 看时事新闻 30 分钟（周末弹性）"
+      ]
+    },
+    {
+      "id": "english",
+      "module": "核心巡航（学习）",
+      "name": "英语 · 原版与词汇",
+      "miles": 3,
+      "frequency": "day",
+      "options": [
+        "原版科普或课文听读 15 分钟",
+        "进阶词汇 10 个",
+        "阅读理解 1 篇精讲精读",
+        "原版故事磨耳朵 30 分钟",
+        "完成课外班阅读与单词作业"
+      ]
+    },
+    {
+      "id": "math",
+      "module": "核心巡航（学习）",
+      "name": "数学 · 建模规范",
+      "miles": 3,
+      "frequency": "day",
+      "options": [
+        "错题整理并写完整思路",
+        "独立精做 2 道拓展题，草稿纸规范写步骤"
+      ]
+    },
+    {
+      "id": "general",
+      "module": "核心巡航（学习）",
+      "name": "小四门 · 通识启蒙",
+      "miles": 2,
+      "frequency": "day",
+      "options": [
+        "观看历史、地理或自然纪录片 20 分钟",
+        "睡前收听文史人文音频"
+      ]
+    },
+    {
+      "id": "calm",
+      "module": "平稳飞行（情绪）",
+      "name": "情绪平稳着陆",
+      "miles": 3,
+      "frequency": "day",
+      "options": [
+        "受挫、被批评或计划变动时，不吼叫、不甩锅，冷静表达"
+      ]
+    },
+    {
+      "id": "ask",
+      "module": "平稳飞行（情绪）",
+      "name": "求助代替指责",
+      "miles": 2,
+      "frequency": "day",
+      "options": [
+        "遇到难题，用“请帮我看一下”替代指责"
+      ]
+    },
+    {
+      "id": "excellent",
+      "module": "机场勋章（德行）",
+      "name": "周全勤卓越勋章",
+      "miles": 15,
+      "frequency": "week",
+      "options": [
+        "周一至周五学习任务在约定时间内无催促、高效完成（父母核实）"
+      ]
+    },
+    {
+      "id": "share",
+      "module": "机场勋章（德行）",
+      "name": "家庭领航分享",
+      "miles": 5,
+      "frequency": "weekend",
+      "options": [
+        "周末给家人讲本周学到的文史故事",
+        "周末给家人讲地理现象",
+        "周末给家人讲航空机械原理"
+      ]
+    },
+    {
+      "id": "merit",
+      "name": "三好学生",
+      "miles": 60,
+      "options": [
+        "获得学校正式三好学生荣誉，说明具体日期、学科或赛事名称；同一评奖/赛事仅选最高荣誉"
+      ],
+      "module": "机场勋章（德行）",
+      "frequency": "event"
+    },
+    {
+      "id": "pioneer",
+      "name": "优秀少先队员",
+      "miles": 50,
+      "options": [
+        "获得学校正式优秀少先队员荣誉，说明具体日期、学科或赛事名称；同一评奖/赛事仅选最高荣誉"
+      ],
+      "module": "机场勋章（德行）",
+      "frequency": "event"
+    },
+    {
+      "id": "perfect",
+      "name": "满分学霸",
+      "miles": 15,
+      "options": [
+        "独立完成正式测验或考试并取得满分，说明具体日期、学科或赛事名称；同一评奖/赛事仅选最高荣誉"
+      ],
+      "module": "机场勋章（德行）",
+      "frequency": "event"
+    },
+    {
+      "id": "aplus",
+      "name": "A+达人",
+      "miles": 10,
+      "options": [
+        "独立完成正式作业或评价并取得 A+，说明具体日期、学科或赛事名称；同一评奖/赛事仅选最高荣誉"
+      ],
+      "module": "机场勋章（德行）",
+      "frequency": "event"
+    },
+    {
+      "id": "champion",
+      "name": "冠军状元",
+      "miles": 40,
+      "options": [
+        "正式比赛获第一名，说明具体日期、学科或赛事名称；同一评奖/赛事仅选最高荣誉"
+      ],
+      "module": "机场勋章（德行）",
+      "frequency": "event"
+    },
+    {
+      "id": "runnerup",
+      "name": "亚军榜眼",
+      "miles": 30,
+      "options": [
+        "正式比赛获第二名，说明具体日期、学科或赛事名称；同一评奖/赛事仅选最高荣誉"
+      ],
+      "module": "机场勋章（德行）",
+      "frequency": "event"
+    },
+    {
+      "id": "third",
+      "name": "季军探花",
+      "miles": 20,
+      "options": [
+        "正式比赛获第三名，说明具体日期、学科或赛事名称；同一评奖/赛事仅选最高荣誉"
+      ],
+      "module": "机场勋章（德行）",
+      "frequency": "event"
+    }
+  ],
+  "shop": [
+    {
+      "id": "screen",
+      "name": "航线巡航 · 屏幕特权",
+      "cost": 50,
+      "description": "周末 50–60 分钟自由屏幕时间，内容与父母约定。",
+      "cash": 0
+    },
+    {
+      "id": "cash",
+      "name": "机长津贴 · 零用现金",
+      "cost": 10,
+      "description": "兑换 5 元现金，每自然周最多 3 次。",
+      "cash": 500
+    },
+    {
+      "id": "bedtime",
+      "name": "周末自主作息卡",
+      "cost": 20,
+      "description": "周末就寝延后 30 分钟，用于航模或亲子桌游。",
+      "cash": 0
+    }
+  ],
+  "annual": [
+    {
+      "threshold": 300,
+      "name": "初次离地",
+      "reward": "专属机长登机牌 + 亲子纸飞机挑战",
+      "aircraft": "Airbus A220-300"
+    },
+    {
+      "threshold": 600,
+      "name": "穿越云层",
+      "reward": "一枚民航飞机徽章 + 自选家庭航空电影夜",
+      "aircraft": "Embraer E195-E2"
+    },
+    {
+      "threshold": 1000,
+      "name": "稳定巡航",
+      "reward": "一套入门民航飞机拼装模型（建议预算 150 元内）",
+      "aircraft": "Airbus A319neo"
+    },
+    {
+      "threshold": 1500,
+      "name": "跨越山海",
+      "reward": "机场观景或航空博物馆亲子一日行（建议预算 300 元内）",
+      "aircraft": "Boeing 737-800"
+    },
+    {
+      "threshold": 2000,
+      "name": "远程领航",
+      "reward": "一次正规机构模拟飞行体验（建议预算 500 元内）",
+      "aircraft": "Airbus A320neo"
+    },
+    {
+      "threshold": 2500,
+      "name": "年度王牌机长",
+      "reward": "国内大型客机航班机票 + 目的地亲子旅行；父母确认日期、同行人和总预算，机型以实际执飞为准",
+      "aircraft": "COMAC C919"
+    }
+  ],
+  "weekly_surprises": [
+    "亲子纸飞机挑战 30 分钟",
+    "下次家庭桌游由你选择",
+    "与爸爸或妈妈共建航模 45 分钟",
+    "选一道周末早餐",
+    "为家庭航线命名并制作登机牌"
+  ],
+  "honors": [
+    {
+      "id": "21days",
+      "name": "二副机长 · 21 天无中断",
+      "cash": 3000,
+      "fund": 0,
+      "reward": "现金 30 元 + 周日家庭晚餐菜单指定权",
+      "condition": "按完成日期，每天至少一个任务子项审批通过，连续 21 天；系统自动统计，每自然年最多一次",
+      "days": 21,
+      "aircraft": "Boeing 777-300ER"
+    },
+    {
+      "id": "30days",
+      "name": "首副机长 · 30 天无中断",
+      "cash": 6000,
+      "fund": 0,
+      "reward": "现金 60 元 + 电影券或游戏厅 200 币（二选一）",
+      "condition": "按完成日期，每天至少一个任务子项审批通过，连续 30 天；系统自动统计，每自然年最多一次",
+      "days": 30,
+      "aircraft": "Boeing 787-9"
+    },
+    {
+      "id": "2months",
+      "name": "王牌正机长 · 双月达标",
+      "cash": 15000,
+      "fund": 0,
+      "reward": "现金 150 元 + 航空模型或航天展（二选一）",
+      "condition": "按完成日期，每天至少一个任务子项审批通过，连续 60 天；系统自动统计，每自然年最多一次",
+      "days": 60,
+      "aircraft": "Airbus A380-800"
+    },
+    {
+      "id": "fund",
+      "name": "年度领航者基金",
+      "cash": 0,
+      "fund": 80000,
+      "reward": "800 元飞行员梦想基金",
+      "condition": "学期稳步推进、期末文科见成效且全班前 3 名，由父母核实；每自然年最多一次"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# Replace captain.example.com with a domain you control.
+# Keep the backend loopback-only, and set CAPTAIN_SECURE_COOKIE=1.
+captain.example.com {
+    encode gzip
+    reverse_proxy 127.0.0.1:8765
+}

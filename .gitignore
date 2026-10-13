@@ -1,0 +1,9 @@
+data/
+.test-work/
+__pycache__/
+*.sqlite3*
+android/.gradle/
+android/local.properties
+android/**/build/
+*.jks
+*.keystore

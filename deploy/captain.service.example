@@ -1,0 +1,16 @@
+[Unit]
+Description=ACE Captain family application
+After=network.target
+
+[Service]
+Type=simple
+User=captain
+WorkingDirectory=/opt/ace-captain
+Environment=CAPTAIN_SECURE_COOKIE=1
+ExecStart=/usr/bin/python3 /opt/ace-captain/server.py --host 127.0.0.1 --port 8765
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
