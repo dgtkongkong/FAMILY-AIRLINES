@@ -76,6 +76,88 @@ def init_db(passwords=None):
 def audit(c,actor,action,detail):
     c.execute('INSERT INTO audit(created,actor,action,detail) VALUES (?,?,?,?)',(stamp(),actor,action,encode(detail)))
 
+def family_rules(c):
+    result=json.loads(encode(RULES))
+    for kind in ('tasks','shop','annual'):
+        row=c.execute('SELECT value FROM settings WHERE key=?',('custom:'+kind,)).fetchone()
+        if row: result[kind].extend(json.loads(row[0]))
+    result['annual'].sort(key=lambda a:a['threshold'])
+    return result
+
+def publish_item(c,u,b):
+    require(u['role']=='parent','仅父母可发布家庭规则')
+    kind=b.get('kind');require(kind in ('tasks','shop','annual'),'请选择有效类型')
+    def text_field(key,limit):
+        value=b.get(key)
+        require(isinstance(value,str) and 1<=len(value.strip())<=limit,'请填写有效的 '+key)
+        return value.strip()
+    def integer(key,minimum=1,maximum=1000000):
+        value=b.get(key);require(type(value) is int and minimum<=value<=maximum,'请填写有效整数 '+key)
+        return value
+    item={'id':'custom-'+secrets.token_hex(12),'name':text_field('name',60)}
+    if kind=='tasks':
+        module=text_field('module',30)
+        require(module in ('地面保障（生活）','核心巡航（学习）','平稳飞行（情绪）','机场勋章（德行）'),'模块无效')
+        options=b.get('options')
+        require(isinstance(options,list) and 1<=len(options)<=30,'请填写 1 至 30 个子项')
+        require(all(isinstance(v,str) and 1<=len(v.strip())<=200 for v in options),'每个子项须为 1 至 200 字')
+        options=[v.strip() for v in options];require(len(set(options))==len(options),'子项不能重复')
+        frequency=b.get('frequency');require(frequency in ('day','week','weekend','event'),'任务频率无效')
+        item.update(module=module,options=options,frequency=frequency,miles=integer('miles',1,10000))
+    elif kind=='shop':
+        item.update(cost=integer('cost'),description=text_field('description',500),cash=0)
+    else:
+        threshold=integer('threshold')
+        require(all(a['threshold']!=threshold for a in family_rules(c)['annual']),'该里程目标已存在')
+        aircraft=text_field('aircraft',40)
+        require(aircraft in ('Airbus A220-300','Airbus A319neo','Airbus A320neo','Airbus A321neo','Boeing 737-800','Boeing 737 MAX 8','Embraer E195-E2','COMAC C919'),'请选择有效飞机型号')
+        item.update(threshold=threshold,reward=text_field('reward',500),aircraft=aircraft)
+    key='custom:'+kind
+    row=c.execute('SELECT value FROM settings WHERE key=?',(key,)).fetchone()
+    items=json.loads(row[0]) if row else []
+    require(len(items)<200,'此类型自定义项目已达到 200 项上限')
+    items.append(item)
+    c.execute('INSERT OR REPLACE INTO settings VALUES (?,?)',(key,encode(items)))
+    audit(c,u['id'],'publish',{'kind':kind,'item':item})
+    trigger_awards(c);sync_medals(c)
+    return {'message':'已发布，家庭成员刷新后即可看到','id':item['id']}
+
+RESET_TABLES=('requests','ledger','goals','awards','medals','reports','audit')
+
+def reset_prepare(c,u,b):
+    require(u['id']=='dad','仅爸爸可将账本归零')
+    require(b.get('confirm') is True,'请完成第一次确认')
+    token=secrets.token_urlsafe(32)
+    data={'hash':hashlib.sha256(token.encode()).hexdigest(),'expires':time.time()+120,
+          'revision':c.execute('SELECT COALESCE(MAX(id),0) FROM audit').fetchone()[0]}
+    c.execute("INSERT OR REPLACE INTO settings VALUES ('reset_challenge',?)",(encode(data),))
+    return {'token':token,'message':'第一次确认完成，请在两分钟内输入确认文字'}
+
+def reset_all(c,u,b):
+    require(u['id']=='dad','仅爸爸可将账本归零')
+    row=c.execute("SELECT value FROM settings WHERE key='reset_challenge'").fetchone()
+    require(row is not None,'请先完成第一次确认')
+    data=json.loads(row[0])
+    require(data['expires']>=time.time(),'确认已过期，请重新开始')
+    require(hmac.compare_digest(data['hash'],hashlib.sha256(str(b.get('token','')).encode()).hexdigest()),'确认凭据无效')
+    require(b.get('confirmation')=='确认全部归零','请准确输入：确认全部归零')
+    require(data['revision']==c.execute('SELECT COALESCE(MAX(id),0) FROM audit').fetchone()[0],'确认期间账本发生变化，请重新核对后归零')
+    # Read from a separate connection: captures the committed database before deletion.
+    backup_dir=DB.parent/'reset-backups';backup_dir.mkdir(mode=0o700,exist_ok=True)
+    backup=backup_dir/('before-reset-'+secrets.token_hex(16)+'.sqlite3')
+    fd=os.open(backup,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600);os.close(fd)
+    with contextlib.closing(sqlite3.connect(DB)) as source, contextlib.closing(sqlite3.connect(backup)) as destination:
+        source.backup(destination)
+        require(destination.execute('PRAGMA integrity_check').fetchone()[0]=='ok','备份校验失败，已取消归零')
+    counts={table:c.execute('SELECT COUNT(*) FROM '+table).fetchone()[0] for table in RESET_TABLES}
+    for table in RESET_TABLES: c.execute('DELETE FROM '+table)
+    c.execute("DELETE FROM settings WHERE key='reset_challenge'")
+    c.execute("INSERT OR REPLACE INTO settings VALUES ('started',?)",(keydate(now().date()),))
+    c.execute("INSERT OR REPLACE INTO settings VALUES ('reset_date',?)",(keydate(now().date()),))
+    c.execute("DELETE FROM sessions WHERE user!='dad'")
+    audit(c,u['id'],'reset-all',{'counts':counts,'backup':backup.name})
+    return {'message':'所有成长账本已归零；账号、家庭配置及归零前备份已保留'}
+
 def total(c,start,end):
     return c.execute('SELECT COALESCE(SUM(miles),0) FROM ledger WHERE miles>0 AND substr(created,1,10)>=? AND substr(created,1,10)<?',(keydate(start),keydate(end))).fetchone()[0]
 
@@ -91,18 +173,19 @@ def trigger_awards(c):
     if goal and total(c,start,start+dt.timedelta(days=7))>=goal[0]:
         c.execute('INSERT OR IGNORE INTO awards(id,created,title,reward) VALUES (?,?,?,?)',('week:'+keydate(start),stamp(),'周目标达成 · 惊喜航班',secrets.choice(RULES['weekly_surprises'])))
     annual=total(c,dt.date(today.year,1,1),dt.date(today.year+1,1,1))
-    for stage in RULES['annual']:
+    for stage in family_rules(c)['annual']:
         if annual>=stage['threshold']:
             c.execute('INSERT OR IGNORE INTO awards(id,created,title,reward) VALUES (?,?,?,?)',(f"annual:{today.year}:{stage['threshold']}",stamp(),stage['name'],stage['reward']))
 
 def submit_tasks(c,u,b):
     require(u['role']=='child','仅机长可提交打卡')
-    items=b.get('items',[]); require(isinstance(items,list) and 1<=len(items)<=len(TASKS),'请选择有效任务')
+    tasks={x['id']:x for x in family_rules(c)['tasks']}
+    items=b.get('items',[]); require(isinstance(items,list) and 1<=len(items)<=len(tasks),'请选择有效任务')
     day=dt.date.fromisoformat(b.get('day',''))
     require(now().date()-dt.timedelta(days=6)<=day<=now().date(),'仅允许提交今天及前 6 天的记录')
     ids=[]
     for item in items:
-        t=TASKS.get(item.get('id')); require(t is not None,'任务不存在')
+        t=tasks.get(item.get('id')); require(t is not None,'任务不存在')
         choices=item.get('choices',[])
         require(isinstance(choices,list) and choices and all(type(i) is int and 0<=i<len(t['options']) for i in choices),'请选择有效达标标准')
         require(len(choices)==len(set(choices)),'标准不能重复')
@@ -121,7 +204,7 @@ def submit_tasks(c,u,b):
 
 def submit_redeem(c,u,b):
     require(u['role']=='child','仅机长可申请兑换')
-    s=SHOP.get(b.get('id')); require(s is not None,'权益不存在')
+    s={x['id']:x for x in family_rules(c)['shop']}.get(b.get('id')); require(s is not None,'权益不存在')
     require(balance(c)-reserved(c)>=s['cost'],'可申请里程不足（含待审批预留）')
     start=keydate(week(now().date()))
     if s['cash']:
@@ -156,11 +239,11 @@ def review(c,u,b):
     if approve and r['kind']=='redeem': require(balance(c)>=r['miles'],'余额不足')
     c.execute('UPDATE requests SET status=?,reviewer=?,reviewed=?,reason=? WHERE id=?',('approved' if approve else 'rejected',u['name'],stamp(),reason,r['id']))
     if approve:
-        module=TASKS[r['item']]['module'] if r['kind']=='task' else ('权益兑换' if r['kind']=='redeem' else '公约荣誉')
+        module=next(t['module'] for t in family_rules(c)['tasks'] if t['id']==r['item']) if r['kind']=='task' else ('权益兑换' if r['kind']=='redeem' else '公约荣誉')
         miles=-r['miles'] if r['kind']=='redeem' else r['miles']
         c.execute('INSERT INTO ledger(source,created,miles,cash,fund,module,title) VALUES (?,?,?,?,?,?,?)',(r['id'],stamp(),miles,r['cash'],r['fund'],module,r['title']))
         if r['kind'] in ('redeem','honor'):
-            reward=SHOP[r['item']]['description'] if r['kind']=='redeem' else HONORS[r['item']]['reward']
+            reward=next(t['description'] for t in family_rules(c)['shop'] if t['id']==r['item']) if r['kind']=='redeem' else HONORS[r['item']]['reward']
             c.execute('INSERT INTO awards(id,created,title,reward) VALUES (?,?,?,?)',('request:'+r['id'],stamp(),r['title'],reward))
         trigger_awards(c)
     sync_medals(c)
@@ -232,6 +315,8 @@ def schedule_reports(c,at=None):
         day+=dt.timedelta(days=1)
 
 def save_report(c,kind,start,end):
+    reset=c.execute("SELECT value FROM settings WHERE key='reset_date'").fetchone()
+    if reset and keydate(end)<=reset[0]: return
     rid=kind+':'+keydate(start)
     if not c.execute('SELECT 1 FROM reports WHERE id=?',(rid,)).fetchone():
         c.execute('INSERT INTO reports VALUES (?,?,?,?,?,?)',(rid,kind,keydate(start),keydate(end),stamp(),encode(report_data(c,start,end))))
@@ -242,7 +327,7 @@ def state(c,u):
     cash=dict(c.execute('SELECT COALESCE(SUM(cash),0) cash_due,COALESCE(SUM(fund),0) fund_due,COALESCE(SUM(CASE WHEN cash>0 THEN cash ELSE 0 END),0) cash_earned,COALESCE(SUM(CASE WHEN fund>0 THEN fund ELSE 0 END),0) fund_earned,COALESCE(-SUM(CASE WHEN cash<0 THEN cash ELSE 0 END),0) cash_paid,COALESCE(-SUM(CASE WHEN fund<0 THEN fund ELSE 0 END),0) fund_paid FROM ledger').fetchone())
     goal=c.execute('SELECT target FROM goals WHERE week=?',(keydate(start),)).fetchone()
     annual=total(c,dt.date(today.year,1,1),dt.date(today.year+1,1,1))
-    rules=json.loads(encode(RULES))
+    rules=family_rules(c)
     if u['role']=='child':
         rules['weekly_surprises']=[]
         for stage in rules['annual']:
@@ -269,7 +354,7 @@ def sync_medals(c):
         h=a['honor']
         c.execute('INSERT OR IGNORE INTO medals(id,kind,year,model,title,achieved,cash,fund,reward) VALUES (?,?,?,?,?,?,?,?,?)',(mid,'honor',a['year'],h['aircraft'],h['name'],a['day'],h['cash'],h['fund'],h['reward']))
     for row in c.execute("SELECT id,created,title,reward FROM awards WHERE id LIKE 'annual:%'").fetchall():
-        _,year,threshold=row['id'].split(':');stage=next((a for a in RULES['annual'] if a['threshold']==int(threshold)),None)
+        _,year,threshold=row['id'].split(':');stage=next((a for a in family_rules(c)['annual'] if a['threshold']==int(threshold)),None)
         if stage:c.execute('INSERT OR IGNORE INTO medals(id,kind,year,model,title,achieved,claimed,reward) VALUES (?,?,?,?,?,?,?,?)',(row['id'],'mileage',int(year),stage['aircraft'],row['title'],row['created'][:10],row['created'],row['reward']))
 
 def claim_plane(c,u,b):
@@ -392,7 +477,7 @@ class Handler(BaseHTTPRequestHandler):
                     cookie=SimpleCookie(self.headers.get('Cookie',''))
                     c.execute('DELETE FROM sessions WHERE token=?',(hashlib.sha256(cookie['captain'].value.encode()).hexdigest(),))
                     return self.reply(200,{'message':'已退出'},'captain=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0')
-                routes={'/api/tasks':submit_tasks,'/api/redeem':submit_redeem,'/api/honor':submit_honor,'/api/review':review,'/api/goal':set_goal,'/api/fulfill':fulfill,'/api/cancel':cancel,'/api/review-batch':review_batch,'/api/claim-plane':claim_plane}
+                routes={'/api/publish':publish_item,'/api/reset-prepare':reset_prepare,'/api/reset-all':reset_all,'/api/tasks':submit_tasks,'/api/redeem':submit_redeem,'/api/honor':submit_honor,'/api/review':review,'/api/goal':set_goal,'/api/fulfill':fulfill,'/api/cancel':cancel,'/api/review-batch':review_batch,'/api/claim-plane':claim_plane}
                 if path=='/api/seen':
                     require(u['role']=='child','仅机长确认已读')
                     c.execute('UPDATE awards SET seen=1 WHERE id=?',(b.get('id'),)); result={'message':'已收入荣誉机库'}
